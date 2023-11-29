@@ -4,6 +4,10 @@ const PORT = 8080; // which is the default port
 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+const cookieParser = require('cookie-parser');
+app.use(cookieParser());
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
 // this function generates a random sting based on a url 
 function generateRandomString(length) {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -31,12 +35,14 @@ const urlDatabase = {
 
 //this respons to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase };
+  const templateVars = { urls: urlDatabase,
+    username: req.cookies["username"] };
   res.render("urls_index", templateVars);
 });
 // this directs us to the urls/new page where we can implement new urls to be logged/ its content is stored on the url new page 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  const templateVars = {username: req.cookies["username"]};
+  res.render("urls_new", templateVars);
 });
 
 // this post the new short url into our database and redirects it to the page we generated the short url for 
@@ -66,7 +72,12 @@ app.post("/login", (req, res) => {
   const username = req.body.username
   res.cookie("username", username)
   res.redirect("/urls")
-})
+});
+
+app.post("/logout", (req, res) => {
+ res.clearCookie("username");
+ res.redirect("/urls");
+});
 //added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
 app.get("/u/:id", (req, res) => {
@@ -77,7 +88,7 @@ app.get("/u/:id", (req, res) => {
 
 // this takes us to the link generated page for the short url with the corresponding long url 
 app.get("/urls/:id", (req, res) => {
-  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL };
+  const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, username: req.cookies["username"] };
   res.render("urls_show", templateVars);
 });
 
