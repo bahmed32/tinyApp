@@ -50,6 +50,13 @@ app.post("/urls", (req, res) => {
   console.log(`The short URL: ${shortURL}`);  // Log the POST request body to the console
 
 });
+//added a sumbit for that redirects to the url page after you enter a long url
+app.post("/urls/:id", (req, res) => {
+  const id = req.params.id
+  const newLongURL = req.body.longURL;
+  urlDatabase[id].longURL = newLongURL
+  res.redirect("/urls");
+})
 //as long as route paramter is used within route then you can use any variable
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id
@@ -64,19 +71,33 @@ app.get("/urls/:id", (req, res) => {
 });
 
 
-
-app.get("/hello", (req, res) => {
-  const templateVars = { greeting: "Hello, World!" };
-  res.render("hello_world", templateVars);
-});
-
 app.get("/", (req, res) => {
-  res.send("Hello!");
+  res.send("Hello! and Welcome to tin");
 });
-// takes us to a .json page that stores all the url information 
-app.get('/urls.json', (req, res) => {
-  res.json(urlDatabase);
-});
+
+// gave power to our delete buttons to actually dlwete urls
+
+app.post("/urls/:id/delete", (req, res) => {
+  const id = req.params.id
+  console.log("id", id)
+  console.log("urlDatabase before delete", urlDatabase);
+  delete urlDatabase[id]
+  console.log("urlDatabase after delete ", urlDatabase);
+  res.redirect("/urls")
+
+  
+})
+
+
+
+// app.get("/hello", (req, res) => {
+//   const templateVars = { greeting: "Hello, World!" };
+//   res.render("hello_world", templateVars);
+// });
+// // takes us to a .json page that stores all the url information 
+// app.get('/urls.json', (req, res) => {
+//   res.json(urlDatabase);
+// });
 
 
 
