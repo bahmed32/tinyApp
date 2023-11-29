@@ -43,20 +43,31 @@ app.get("/urls/new", (req, res) => {
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString(5);
-
+  
   urlDatabase[shortURL] = { longURL: longURL };
-
+  
   res.redirect(`urls/${shortURL}`);
   console.log(`The short URL: ${shortURL}`);  // Log the POST request body to the console
-
+  
 });
-//added a sumbit for that redirects to the url page after you enter a long url
+
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id
   const newLongURL = req.body.longURL;
+  console.log("id:", id);
+  console.log("urlDatabase[id]:", urlDatabase[id]);
+
   urlDatabase[id].longURL = newLongURL
   res.redirect("/urls");
 })
+//Add POST route for /login to expressserver.js
+//Redirect browser back to /urls page after successful login
+app.post("/login", (req, res) => {
+  const username = req.body.username
+  res.cookie("username", username)
+  res.redirect("/urls")
+})
+//added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
 app.get("/u/:id", (req, res) => {
   const shortURL = req.params.id
@@ -79,14 +90,12 @@ app.get("/", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id
-  console.log("id", id)
-  console.log("urlDatabase before delete", urlDatabase);
   delete urlDatabase[id]
-  console.log("urlDatabase after delete ", urlDatabase);
   res.redirect("/urls")
 
   
 })
+
 
 
 
