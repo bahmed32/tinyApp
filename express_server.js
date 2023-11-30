@@ -29,59 +29,73 @@ function generateRandomString(length) {
 
 //this is out current data base of key-value pairs stored in an object
 const urlDatabase = {
-  "b2xVn2": {longURL:"http://www.lighthouselabs.ca"},
-  "9sm5xK": {longURL:"http://www.google.com"}
+  "b2xVn2": { longURL: "http://www.lighthouselabs.ca" },
+  "9sm5xK": { longURL: "http://www.google.com" }
 };
 
 //this respons to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase,
-    username: req.cookies["username"] };
+  const templateVars = {
+    urls: urlDatabase,
+    username: req.cookies["username"]
+  };
   res.render("urls_index", templateVars);
 });
 // this directs us to the urls/new page where we can implement new urls to be logged/ its content is stored on the url new page 
 app.get("/urls/new", (req, res) => {
-  const templateVars = {username: req.cookies["username"]};
+  const templateVars = { username: req.cookies["username"] };
   res.render("urls_new", templateVars);
 });
+
+
+//Make a new register page 
+app.get('/urls/register', (req, res) => {
+  res.render("urls_register")
+})
+app.post('/urls/register', (req, res) => {
+  const body = req.body
+  const username = body.username;
+  const password = body.password
+  res.render("urls_index")
+})
 
 // this post the new short url into our database and redirects it to the page we generated the short url for 
 app.post("/urls", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = generateRandomString(5);
-  
+
   urlDatabase[shortURL] = { longURL: longURL };
-  
+
   res.redirect(`urls/${shortURL}`);
   console.log(`The short URL: ${shortURL}`);  // Log the POST request body to the console
-  
+
 });
 
 app.post("/urls/:id", (req, res) => {
-  const id = req.params.id
+  const id = req.params.id;
   const newLongURL = req.body.longURL;
   console.log("id:", id);
   console.log("urlDatabase[id]:", urlDatabase[id]);
 
-  urlDatabase[id].longURL = newLongURL
+  urlDatabase[id].longURL = newLongURL;
   res.redirect("/urls");
-})
+});
 //Add POST route for /login to expressserver.js
 //Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
-  const username = req.body.username
-  res.cookie("username", username)
-  res.redirect("/urls")
+  const username = req.body.username;
+  res.cookie("username", username);
+  res.redirect("/urls");
 });
-
+// made logout button 
 app.post("/logout", (req, res) => {
- res.clearCookie("username");
- res.redirect("/urls");
+  res.clearCookie("username");
+  res.redirect("/urls");
 });
 //added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
 app.get("/u/:id", (req, res) => {
-  const shortURL = req.params.id
+  const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL].longURL;
   res.redirect(longURL);
 });
@@ -94,18 +108,18 @@ app.get("/urls/:id", (req, res) => {
 
 
 app.get("/", (req, res) => {
-  res.send("Hello! and Welcome to tin");
+  res.send("Hello! and Welcome to tinyApp");
 });
 
 // gave power to our delete buttons to actually dlwete urls
 
 app.post("/urls/:id/delete", (req, res) => {
-  const id = req.params.id
-  delete urlDatabase[id]
-  res.redirect("/urls")
+  const id = req.params.id;
+  delete urlDatabase[id];
+  res.redirect("/urls");
 
-  
-})
+
+});
 
 
 
