@@ -8,23 +8,19 @@ const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
+
+
 // this function generates a random sting based on a url 
 function generateRandomString(length) {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let results = '';
   let counter = 0;
 
-
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * charset.length);
     results += charset[randomIndex];
   }
-
   return results;
-  // input is a url 
-  //shpuld pass in the url as a parameter, so can be changed
-  //apply a random genrator to string
-  //output is a string 
 }
 
 //this is out current data base of key-value pairs stored in an object
@@ -45,7 +41,7 @@ const users = {
   },
 };
 
-//this respons to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
+//this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   let user = {
@@ -82,7 +78,7 @@ app.get("/urls/new", (req, res) => {
 
   const templateVars = { user: user };
   res.render("urls_new", templateVars);
-  
+
 });
 
 
@@ -113,17 +109,27 @@ app.post('/register', (req, res) => {
   const email = body.email;
   const password = body.password;
 
+  // return 404 if the e-mail or password are empty string
+  if(email === "" || password === ""){
+    res.status(404).end('<p>Please ensure both email and password are filled in!</p>');
+    return
+  };
+
   //check if user already exsists
   let userExists = false; // if user doesnt exsist,
-  for (const id in users) {
-    const dbUser = users[id];
-    if (email === dbUser.email) {
-      userExists = true;// if the user already exists we cannot register
-    } else {
-      if (userExists) {
-        res.status(404).end('<p>User already exists!</p>');
-        return;
-      };
+  const getUserByEmail = (email) => {
+    for (const id in users) {
+      const dbUser = users[id];
+      
+      if (email === dbUser.email) {
+        userExists = true;// if the user already exists we cannot register
+      } else {
+        if (userExists) {
+          res.status(404).end('<p>User already exists!</p>');
+          return;
+        };
+
+  }
     }
   }
 
