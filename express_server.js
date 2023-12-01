@@ -31,34 +31,23 @@ const urlDatabase = {
 const users = {
   userRandomID: {
     id: "userRandomID",
-    email: "user@example.com",
-    password: "123"
+      email: "user@example.com",
+        password: "123",
   },
   user2RandomID: {
     id: "user2RandomID",
-    email: "user2@example.com",
-    password: "456",
-  },
+      email: "user2@example.com",
+        password: "456",
+    },
+    
 };
 
 //this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
-  let user = {
+  let user = users[userId];
+  const templateVars = {urls: urlDatabase, user}
 
-  };
-  let userExists = false; // if user doesnt exsist,
-  for (const id in users) {
-    const dbUser = users[id];
-    if (id === dbUser.id) {
-      user = dbUser;
-    }
-
-  }
-  const templateVars = {
-    urls: urlDatabase,
-    user: user
-  };
   res.render("urls_index", templateVars);
 });
 // this directs us to the urls/new page where we can implement new urls to be logged/ its content is stored on the url new page 
@@ -81,25 +70,16 @@ app.get("/urls/new", (req, res) => {
 
 });
 
+///// added  a login function that has a link at the top of the page.
+app.get('/login', (req, res) => {
+  res.render("urls_login", {user: null}); 
+});
+
 
 //Make a new register page 
 app.get('/register', (req, res) => {
-  const userId = req.cookies["user_id"];
-  let user = {
-
-  };
-  let userExists = false; // if user doesnt exsist,
-  for (const id in users) {
-    const dbUser = users[id];
-    if (id === dbUser.id) {
-      user = dbUser;
-    }
-
-  }
-  const templateVars = {
-    user: user
-  };
-  res.render("urls_register", templateVars);
+  
+  res.render("urls_register", {user: null});
 
 });
 
@@ -110,9 +90,9 @@ app.post('/register', (req, res) => {
   const password = body.password;
 
   // return 404 if the e-mail or password are empty string
-  if(email === "" || password === ""){
+  if (email === "" || password === "") {
     res.status(404).end('<p>Please ensure both email and password are filled in!</p>');
-    return
+    return;
   };
 
   //check if user already exsists
@@ -120,7 +100,7 @@ app.post('/register', (req, res) => {
   const getUserByEmail = (email) => {
     for (const id in users) {
       const dbUser = users[id];
-      
+
       if (email === dbUser.email) {
         userExists = true;// if the user already exists we cannot register
       } else {
@@ -129,9 +109,9 @@ app.post('/register', (req, res) => {
           return;
         };
 
-  }
+      }
     }
-  }
+  };
 
   const uniqueId = `user${generateRandomString(5)}RandomID`;
   //add new users to datbase 
@@ -174,19 +154,24 @@ app.post("/urls/:id", (req, res) => {
 //Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
   const email = req.body.email;
-  res.cookie("user_id", user);
+
+  if (email) {
+    res.cookie("user_id", email);
+    res.redirect("/urls");
+  }
+
   //generate random user id
 
   //set user_id cookie to contain newly genrated 
 
   //redirect to the url page 
-  res.redirect("/urls");
+
 });
 // made logout button 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/register");
-
+  res.redirect("/urls");
 });
 //added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
