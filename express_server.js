@@ -31,22 +31,39 @@ const urlDatabase = {
 const users = {
   userRandomID: {
     id: "userRandomID",
-      email: "user@example.com",
-        password: "123",
+    email: "user@example.com",
+    password: "abc",
   },
   user2RandomID: {
     id: "user2RandomID",
-      email: "user2@example.com",
-        password: "456",
-    },
-    
+    email: "user2@example.com",
+    password: "456",
+  },
+
 };
 
+const doesUserExists = (email) => {
+  let userExists = false; // if user doesnt exsist,
+  for (const id in users) {
+    const dbUser = users[id];
+
+    if (email === dbUser.email) {
+      userExists = true;// if the user already exists we cannot register
+    } else {
+      if (userExists) {
+        res.status(404).end('<p>User already exists!</p>');
+        return;
+      };
+
+    }
+    return userExists;
+  }
+};
 //this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   let user = users[userId];
-  const templateVars = {urls: urlDatabase, user}
+  const templateVars = { urls: urlDatabase, user };
 
   res.render("urls_index", templateVars);
 });
@@ -72,14 +89,25 @@ app.get("/urls/new", (req, res) => {
 
 ///// added  a login function that has a link at the top of the page.
 app.get('/login', (req, res) => {
-  res.render("urls_login", {user: null}); 
+
+  const body = req.body;
+  const email = body.email;
+  const password = body.password;
+
+  if (email === "" || password === "") {
+    res.status(404).end('<p>Please ensure both email and password are filled in!</p>');
+    return;
+  };
+
+  //check if user already exsists
+  res.render("urls_login", { user: null });
 });
 
 
 //Make a new register page 
 app.get('/register', (req, res) => {
-  
-  res.render("urls_register", {user: null});
+
+  res.render("urls_register", { user: null });
 
 });
 
@@ -96,21 +124,9 @@ app.post('/register', (req, res) => {
   };
 
   //check if user already exsists
-  let userExists = false; // if user doesnt exsist,
-  const getUserByEmail = (email) => {
-    for (const id in users) {
-      const dbUser = users[id];
-
-      if (email === dbUser.email) {
-        userExists = true;// if the user already exists we cannot register
-      } else {
-        if (userExists) {
-          res.status(404).end('<p>User already exists!</p>');
-          return;
-        };
-
-      }
-    }
+  if (doesUserExists(email)) {
+    res.status(403).end('<p>Email already in use, please register another email.</p>');
+    return;
   };
 
   const uniqueId = `user${generateRandomString(5)}RandomID`;
@@ -124,7 +140,6 @@ app.post('/register', (req, res) => {
   };
   users[uniqueId] = newUser;
   res.cookie("user_id", uniqueId);
-  console.log("users", users);
   //redirect to sign-in page 
   res.redirect("urls");
 });
@@ -150,28 +165,55 @@ app.post("/urls/:id", (req, res) => {
   urlDatabase[id].longURL = newLongURL;
   res.redirect("/urls");
 });
+
+
+
 //Add POST route for /login to expressserver.js
 //Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
-  const email = req.body.email;
 
-  if (email) {
-    res.cookie("user_id", email);
-    res.redirect("/urls");
+  const body = req.body;
+  const email = body.email;
+  const password = String(body.password);
+
+  //check if user already exsists
+  if (!doesUserExists(email)) {
+    res.status(403).end('<p>Register new account</p>');
+    return;
+  };
+  //looping through users. Checking user exist based on email gotten from request, checking passwords are the same 
+  //if not return error code.
+  for (const id in users) {
+    const dbUser = users[id];
+    if (email === dbUser.email) {
+      if (password !== dbUser.password) {
+        res.status(403).end('<p>Password is not the same</p>');
+        return;
+      } 
+
+        console.log("dbUser[id]", dbUser["id"], "dbUser.id", dbUser.id);
+        res.cookie("user_id", dbUser.id);
+
+    }
+    
   }
-
-  //generate random user id
-
-  //set user_id cookie to contain newly genrated 
-
-  //redirect to the url page 
-
+  
+  
+  //1) we register new users
+  //2) we log the new user in the database with cookies
+  //3) sign in with the email we've registered 
+  
+  
+  
+  
+  res.redirect("/urls");
+  
+  
 });
 // made logout button 
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/register");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 //added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
