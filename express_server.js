@@ -1,17 +1,17 @@
 // Required imports 
-const { getUserByEmail } = require('./helpers.js')
+const { getUserByEmail } = require('./helpers.js');
 const express = require("express");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
 
 const app = express();
-const PORT = 8080; 
+const PORT = 8080;
 
 
 // middleware 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieSession({
   name: 'session',
@@ -45,19 +45,7 @@ const urlDatabase = {
   },
 
 };
-///////////////
-// */
-// //output: 123
-// urlDatabase.longURL;
 
-// //output: http://www.lighthouselabs.ca
-// urlDatabase.b2xVn2.longURL
-
-// //If you want to make the key dynamic then use a a sqaure bracket 
-// const x = "b2xVn2"
-// urlDatabase[x].longURL
-
-//////////////////////
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -72,14 +60,14 @@ const users = {
 
 };
 
-
+// hrlperfunction that compares urls to the database
 
 const getUsersUrls = (userid) => {
   const userUrls = {};
-  for (const url in urlDatabase) {// this is the looping through url database// url = "b2xVn2"
-    const urlObject = urlDatabase[url]; // assigning variable to   {longURL: "http://www.lighthouselabs.ca", userId: "aJ48lW"}
-    if (userid === urlObject.userId) { // checking if out userid  is equal to the user id in urldatabase 
-      userUrls[url] = urlObject; // insert matching urls to our emtpy userUrls object // userId.b2xVn2 = { longURL:xxxxx, userId:yyy}
+  for (const url in urlDatabase) {
+    const urlObject = urlDatabase[url];
+    if (userid === urlObject.userId) {
+      userUrls[url] = urlObject;
     }
   }
   return userUrls;
@@ -89,10 +77,11 @@ const getUsersUrls = (userid) => {
 
 
 
-//this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
+//this response to a get request from the browser when route path is /urls
+// and directs us the content on the url_index page 
+
 app.get("/urls", (req, res) => {
-  // const userId = req.cookies["user_id"];
-  const userId = req.session.user_id
+  const userId = req.session.user_id;
   let user = users[userId];
 
   // check if user is not logged in
@@ -100,19 +89,15 @@ app.get("/urls", (req, res) => {
     res.status(403).send("Please log in <a href='/login'>here</a> ");
   }
 
-  // Instructions: Return HTML with a relevant error message at GET /urls if the user is not logged in.
-
-
   const templateVars = { urls: getUsersUrls(user.id), user };
-
   res.render("urls_index", templateVars);
 });
 
 
-// this directs us to the urls/new page where we can implement new urls to be logged/ its content is stored on the url new page 
+// this directs us to the urls/new page where we can implement new urls to be logged/ 
+//its content is stored on the url new page 
 app.get("/urls/new", (req, res) => {
-  // const userId = req.cookies["user_id"];
-  const userId = req.session.user_id
+  const userId = req.session.user_id;
   let userExists = false;
   let user = null;
 
@@ -133,21 +118,11 @@ app.get("/urls/new", (req, res) => {
 
 });
 
-///// added  a login function that has a link at the top of the page.
-
-// Get would be for viewing a page or viewing something
-// Post would be used for login the user into the system - username and password 
+//created login page
 
 app.get('/login', (req, res) => {
 
-  /*
-    check if user already logged in - look at the cookie and compare it with the db
-  
-    1. if user logged in reroute to urls route (urls routes)
-    2. else render urls_login page (login page)
-  */
-  // const userId = req.cookies["user_id"];
-  const userId = req.session.user_id
+  const userId = req.session.user_id;
   let userExists = false;
   for (const id in users) {
     const dbUser = users[id];
@@ -166,9 +141,9 @@ app.get('/login', (req, res) => {
 });
 
 
-//Make a new register page 
+//Created registration page 
 app.get('/register', (req, res) => {
-  const userId = req.session.user_id
+  const userId = req.session.user_id;
   let userExists = false;
   for (const id in users) {
     const dbUser = users[id];
@@ -187,7 +162,7 @@ app.get('/register', (req, res) => {
 
 
 
-//have a place for it to go after it post on the register page
+//After registration form is submitted
 app.post('/register', (req, res) => {
   const body = req.body;
   const email = body.email;
@@ -209,7 +184,7 @@ app.post('/register', (req, res) => {
 
   // generate the hash
   const salt = bcrypt.genSaltSync(10);
-  const hash = bcrypt.hashSync(password, salt)
+  const hash = bcrypt.hashSync(password, salt);
 
   //add new users to datbase 
   const newUser = {
@@ -219,19 +194,19 @@ app.post('/register', (req, res) => {
 
   };
   users[uniqueId] = newUser;
-  req.session.user_id = uniqueId
-  
- 
+  req.session.user_id = uniqueId;
+
+
   //redirect to sign-in page 
   res.redirect("urls");
 });
 
+
+
 // this post the new short url into our database and redirects it to the page we generated the short url for 
 app.post("/urls", (req, res) => {
-
-
   //checking is user is logged in
-  // const userId = req.cookies["user_id"];
+
   const userId = req.session.user_id;
   let userExists = false;
   for (const id in users) {
@@ -246,8 +221,7 @@ app.post("/urls", (req, res) => {
     return;
   }
 
-
-  //create shorten urls /////////////////////////////////
+  //create shorten urls 
   const longURL = req.body.longURL;
   const shortURL = generateRandomString(5);
 
@@ -257,6 +231,7 @@ app.post("/urls", (req, res) => {
   console.log(`The short URL: ${shortURL}`);  // Log the POST request body to the console
 
 });
+
 
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
@@ -271,8 +246,7 @@ app.post("/urls/:id", (req, res) => {
 
 
 
-//Add POST route for /login to expressserver.js
-//Redirect browser back to /urls page after successful login
+//Added POST route for /login 
 app.post("/login", (req, res) => {
   const body = req.body;
   const email = body.email;
@@ -281,41 +255,26 @@ app.post("/login", (req, res) => {
 
 
   //check if user already exsists
-  const user = getUserByEmail(email, users)
+  const user = getUserByEmail(email, users);
   if (!user) {
     res.status(403).end("<p>User does not exist. Register new account <a href='/register'>here</a></p>");
     return;
   };
-  //looping through users. Checking user exist based on email gotten from request, checking passwords are the same 
-  //if not return error code.
-  
-      const result = bcrypt.compareSync(password, user.password);
-      if (!result) {
-        res.status(403).end('<p>Password is not the same</p>');
-        return;
-      }
 
-      userId = user.id;
-    
+  const result = bcrypt.compareSync(password, user.password);
+  if (!result) {
+    res.status(403).end('<p>Password is not the same</p>');
+    return;
+  }
 
-    
-    
-    
-    //1) we register new users
-    //2) we log the new user in the database with cookies
-    //3) sign in with the email we've registered 
-    
-    // res.cookie("user_id", userId);
-    req.session.user_id = userId
-    res.redirect("/urls");
-    
-  });
-   
+  userId = user.id;
+  req.session.user_id = userId;
+  res.redirect("/urls");
+
+});
 
 
-
-
-// made logout button 
+//  logout button 
 app.post("/logout", (req, res) => {
   req.session.user_id = null;
   req.session = null;
@@ -323,14 +282,14 @@ app.post("/logout", (req, res) => {
 });
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//added a sumbit for that redirects to the url page after you enter a long url
-//as long as route paramter is used within route then you can use any variable
+
+//added a submit, redirects to url page.
+
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
- 
-  if (!url ) {
+
+  if (!url) {
     res.status(404).send("Page Not Found");
     return;
   }
@@ -340,20 +299,19 @@ app.get("/u/:id", (req, res) => {
     return;
   }
 
- 
+
   const userId = url.userId || null;
   res.redirect(longURL);
 });
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// this takes us to the link generated page for the short url with the corresponding long url 
+
+
+//links short url to corresponding long url page
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
   const userId = req.session.user_id;
   const user = users[userId];
-
-
 
   if (!user) {
     res.status(403).send("Can't access page if not logged in, please log in <a href='/login'>here</a>  ");
@@ -366,20 +324,18 @@ app.get("/urls/:id", (req, res) => {
   res.render("urls_show", templateVars);
 });
 
-
+//if user goes to /
 app.get("/", (req, res) => {
   res.send("Hello! and Welcome to tinyApp");
 });
 
-// gave power to our delete buttons to actually dlwete urls
-
+// Created functional delete button  
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
- 
+
   const userId = req.session.user_id;
   const user = users[userId];
-
 
   // then check if user is even logged in to delete things 
   if (!user) {
@@ -393,18 +349,14 @@ app.post("/urls/:id/delete", (req, res) => {
     return;
   }
 
-
   // check if user even owns the url to delete it 
   if (url.userId !== user.id) {
     res.status(403).send("Can't delete url if not your account, switch accounts? <a href='/login'>here</a>  ");
     return;
   }
 
-
   delete urlDatabase[id];
   res.redirect("/urls");
-
-
 });
 
 
