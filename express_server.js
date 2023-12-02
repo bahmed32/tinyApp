@@ -37,7 +37,7 @@ const urlDatabase = {
     longURL: "http://www.google.com",
     userID: "aJ48lW",
   },
- 
+
 };
 ///////////////
 // */
@@ -69,39 +69,46 @@ const users = {
 const doesUserExists = (email) => {
   for (const id in users) {
     const dbUser = users[id];
-console.log(email, "email")
-console.log(dbUser, "dbUser")
     if (email === dbUser.email) {
       return true;// if the user already exists we cannot register
-    } 
-    
+    }
+
   };
   return false;
 
-  };
+};
 
-// const personLoggedIn = function(cookies) {
-//   for (let user in users) {
-//     if (user === cookies.user_id) {
-//       return true;
-//     };
-//   }
-//   return false;
-// };
+const getUsersUrls = (userid) => {
+  const userUrls = {};
+  for (const url in urlDatabase) {// this is the looping through url database// url = "b2xVn2"
+    const urlObject = urlDatabase[url]; // assigning variable to   {longURL: "http://www.lighthouselabs.ca", userId: "aJ48lW"}
+    if (userid === urlObject.userId) { // checking if out userid  is equal to the user id in urldatabase 
+      userUrls[url] = urlObject; // insert matching urls to our emtpy userUrls object // userId.b2xVn2 = { longURL:xxxxx, userId:yyy}
+    }
+  }
+  return userUrls;
+
+};
+
+
+
+
 //this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
   const userId = req.cookies["user_id"];
   let user = users[userId];
 
   // check if user is not logged in
+  if (!userId) {
+    res.status(403).send("Please log in <a href='/login'>here</a> ");
+  }
 
-  // if (!personLoggedIn(user)) {
-  //   res.status(403).send("Please log in");
-  // }
+  // Instructions: Return HTML with a relevant error message at GET /urls if the user is not logged in.
 
 
 
-  const templateVars = { urls: urlDatabase, user };
+
+  const templateVars = { urls: getUsersUrls(user.id), user };
 
   res.render("urls_index", templateVars);
 });
@@ -120,7 +127,7 @@ app.get("/urls/new", (req, res) => {
       user = dbUser;
     }
   }
-  if (userExists) {
+  if (!userExists) {
     res.redirect("/login");
     return;
   }
@@ -263,10 +270,10 @@ app.post("/urls/:id", (req, res) => {
 //Add POST route for /login to expressserver.js
 //Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
-console.log(users, "users")
-const body = req.body;
-const email = body.email;
-console.log(email, "email")
+  console.log(users, "users");
+  const body = req.body;
+  const email = body.email;
+  console.log(email, "email");
   const password = String(body.password);
   let userId = null;
   //check if user already exsists
@@ -329,18 +336,26 @@ app.get("/u/:id", (req, res) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // this takes us to the link generated page for the short url with the corresponding long url 
 app.get("/urls/:id", (req, res) => {
+  const id = req.params.id;
+  const url = urlDatabase[id];
   const userId = req.cookies["user_id"];
-  let user = {
+  const user = users[userId];
 
-  };
-  let userExists = false; // if user doesnt exsist,
-  for (const id in users) {
-    const dbUser = users[id];
-    if (id === dbUser.id) {
-      user = dbUser;
-    }
-
+  // let userExists = false;
+  // for (const id in users) {
+  //   const dbUser = users[id];
+  //   if (userId === dbUser.id) {
+  //     userExists = true;
+  //     user = dbUser;
+  //   }
+  // }
+  if (!user) {
+    res.status(403).send("Can't access page if not logged in, please log in <a href='/login'>here</a>  ");
   }
+  if (url.userId !== user.id) {
+    res.status(403).send("Can't access page if not your account, switch accounts? <a href='/login'>here</a>  ");
+  }
+
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: user };
   res.render("urls_show", templateVars);
 });
@@ -354,6 +369,31 @@ app.get("/", (req, res) => {
 
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
+  const url = urlDatabase[id];
+  const userId = req.cookies["user_id"];
+  const user = users[userId];
+
+  
+  // then check if user is even logged in to delete things 
+  if (!user) {
+    res.status(403).send("Can't delete page if not logged in, please log in <a href='/login'>here</a>  ");
+    return;
+  }
+
+  // check if the url with this id even exsits
+  if (!url) {
+    res.status(404).send("This id does not exist doesn't exist. <a href='/login'>here</a>  ");
+    return;
+  }
+
+
+  // check if user even owns the url to delete it 
+  if (url.userId !== user.id) {
+    res.status(403).send("Can't delete url if not your account, switch accounts? <a href='/login'>here</a>  ");
+    return;
+  }
+
+
   delete urlDatabase[id];
   res.redirect("/urls");
 
