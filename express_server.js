@@ -1,6 +1,10 @@
 // things we need to import 
 
 const express = require("express");
+const cookieParser = require('cookie-parser');
+const bcrypt = require('bcryptjs');
+
+
 const app = express();
 const PORT = 8080; // which is the default port 
 
@@ -8,9 +12,9 @@ const PORT = 8080; // which is the default port
 // middleware 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-const cookieParser = require('cookie-parser');
 app.use(cookieParser());
 const bodyParser = require('body-parser');
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 
@@ -208,17 +212,23 @@ app.post('/register', (req, res) => {
     return;
   };
 
-  const uniqueId = `user${generateRandomString(5)}RandomID`;
-  //add new users to datbase 
+  const uniqueId = `user${generateRandomString(5)}RandomID`;//creates random id
 
+  // generate the hash
+  const salt = bcrypt.genSaltSync(10);
+  const hash = bcrypt.hashSync(password, salt)
+
+  //add new users to datbase 
   const newUser = {
     id: uniqueId,
     email: email,
-    password: password,
+    password: hash,
 
   };
   users[uniqueId] = newUser;
   res.cookie("user_id", uniqueId);
+  
+  console.log("users line 231", users)
   //redirect to sign-in page 
   res.redirect("urls");
 });
@@ -270,10 +280,9 @@ app.post("/urls/:id", (req, res) => {
 //Add POST route for /login to expressserver.js
 //Redirect browser back to /urls page after successful login
 app.post("/login", (req, res) => {
-  console.log(users, "users");
   const body = req.body;
   const email = body.email;
-  console.log(email, "email");
+  
   const password = String(body.password);
   let userId = null;
   //check if user already exsists
@@ -286,17 +295,18 @@ app.post("/login", (req, res) => {
   for (const id in users) {
     const dbUser = users[id];
     if (email === dbUser.email) {
-      if (password !== dbUser.password) {
+      const result = bcrypt.compareSync(password, dbUser.password);
+      if (!result) {
         res.status(403).end('<p>Password is not the same</p>');
         return;
       }
-      console.log("dbUser[id]", dbUser["id"], "dbUser.id", dbUser.id);
+
       userId = dbUser.id;
+    
+
     }
-
-
-
   }
+
 
   //1) we register new users
   //2) we log the new user in the database with cookies
@@ -305,7 +315,7 @@ app.post("/login", (req, res) => {
   res.cookie("user_id", userId);
   res.redirect("/urls");
 
-});
+    });
 
 
 
@@ -373,7 +383,7 @@ app.post("/urls/:id/delete", (req, res) => {
   const userId = req.cookies["user_id"];
   const user = users[userId];
 
-  
+
   // then check if user is even logged in to delete things 
   if (!user) {
     res.status(403).send("Can't delete page if not logged in, please log in <a href='/login'>here</a>  ");
