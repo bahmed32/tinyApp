@@ -1,21 +1,23 @@
-// things we need to import 
-
+// Required imports 
+const { getUserByEmail } = require('./helpers.js')
 const express = require("express");
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
-
+const cookieSession = require('cookie-session');
 
 const app = express();
-const PORT = 8080; // which is the default port 
+const PORT = 8080; 
 
 
 // middleware 
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-const bodyParser = require('body-parser');
-
+const bodyParser = require('body-parser')
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(cookieSession({
+  name: 'session',
+  keys: ["WelcometomyTinyApp"]
+}));
+
 
 
 // this function generates a random sting based on a url 
@@ -70,17 +72,7 @@ const users = {
 
 };
 
-const doesUserExists = (email) => {
-  for (const id in users) {
-    const dbUser = users[id];
-    if (email === dbUser.email) {
-      return true;// if the user already exists we cannot register
-    }
 
-  };
-  return false;
-
-};
 
 const getUsersUrls = (userid) => {
   const userUrls = {};
@@ -99,17 +91,16 @@ const getUsersUrls = (userid) => {
 
 //this response to a get request from the browser when route path is /urls  and directs us the content on the url_index page 
 app.get("/urls", (req, res) => {
-  const userId = req.cookies["user_id"];
+  // const userId = req.cookies["user_id"];
+  const userId = req.session.user_id
   let user = users[userId];
 
   // check if user is not logged in
-  if (!userId) {
+  if (!userId || !user) {
     res.status(403).send("Please log in <a href='/login'>here</a> ");
   }
 
   // Instructions: Return HTML with a relevant error message at GET /urls if the user is not logged in.
-
-
 
 
   const templateVars = { urls: getUsersUrls(user.id), user };
@@ -120,7 +111,8 @@ app.get("/urls", (req, res) => {
 
 // this directs us to the urls/new page where we can implement new urls to be logged/ its content is stored on the url new page 
 app.get("/urls/new", (req, res) => {
-  const userId = req.cookies["user_id"];
+  // const userId = req.cookies["user_id"];
+  const userId = req.session.user_id
   let userExists = false;
   let user = null;
 
@@ -154,7 +146,8 @@ app.get('/login', (req, res) => {
     1. if user logged in reroute to urls route (urls routes)
     2. else render urls_login page (login page)
   */
-  const userId = req.cookies["user_id"];
+  // const userId = req.cookies["user_id"];
+  const userId = req.session.user_id
   let userExists = false;
   for (const id in users) {
     const dbUser = users[id];
@@ -175,7 +168,7 @@ app.get('/login', (req, res) => {
 
 //Make a new register page 
 app.get('/register', (req, res) => {
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id
   let userExists = false;
   for (const id in users) {
     const dbUser = users[id];
@@ -207,7 +200,7 @@ app.post('/register', (req, res) => {
   };
 
   //check if user already exsists
-  if (doesUserExists(email)) {
+  if (getUserByEmail(email)) {
     res.status(403).end('<p>Email already in use, please register another email.</p>');
     return;
   };
@@ -226,9 +219,9 @@ app.post('/register', (req, res) => {
 
   };
   users[uniqueId] = newUser;
-  res.cookie("user_id", uniqueId);
+  req.session.user_id = uniqueId
   
-  console.log("users line 231", users)
+ 
   //redirect to sign-in page 
   res.redirect("urls");
 });
@@ -238,7 +231,8 @@ app.post("/urls", (req, res) => {
 
 
   //checking is user is logged in
-  const userId = req.cookies["user_id"];
+  // const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   let userExists = false;
   for (const id in users) {
     const dbUser = users[id];
@@ -282,64 +276,72 @@ app.post("/urls/:id", (req, res) => {
 app.post("/login", (req, res) => {
   const body = req.body;
   const email = body.email;
-  
   const password = String(body.password);
   let userId = null;
+
+
   //check if user already exsists
-  if (!doesUserExists(email)) {
-    res.status(403).end('<p>User does not exist register new account </p>');
+  const user = getUserByEmail(email, users)
+  if (!user) {
+    res.status(403).end("<p>User does not exist. Register new account <a href='/register'>here</a></p>");
     return;
   };
   //looping through users. Checking user exist based on email gotten from request, checking passwords are the same 
   //if not return error code.
-  for (const id in users) {
-    const dbUser = users[id];
-    if (email === dbUser.email) {
-      const result = bcrypt.compareSync(password, dbUser.password);
+  
+      const result = bcrypt.compareSync(password, user.password);
       if (!result) {
         res.status(403).end('<p>Password is not the same</p>');
         return;
       }
 
-      userId = dbUser.id;
+      userId = user.id;
     
 
-    }
-  }
-
-
-  //1) we register new users
-  //2) we log the new user in the database with cookies
-  //3) sign in with the email we've registered 
-
-  res.cookie("user_id", userId);
-  res.redirect("/urls");
-
-    });
-
+    
+    
+    
+    //1) we register new users
+    //2) we log the new user in the database with cookies
+    //3) sign in with the email we've registered 
+    
+    // res.cookie("user_id", userId);
+    req.session.user_id = userId
+    res.redirect("/urls");
+    
+  });
+   
 
 
 
 
 // made logout button 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session.user_id = null;
+  req.session = null;
   res.redirect("/login");
 });
-
-
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //added a sumbit for that redirects to the url page after you enter a long url
 //as long as route paramter is used within route then you can use any variable
 app.get("/u/:id", (req, res) => {
-  const shortID = req.params.id;
-  const longURL = urlDatabase[shortID].longURL;
+  const id = req.params.id;
+  const url = urlDatabase[id];
+ 
+  if (!url ) {
+    res.status(404).send("Page Not Found");
+    return;
+  }
+  const longURL = url.longURL;
   if (!longURL) {
     res.status(404).send("Page Not Found");
     return;
   }
+
+ 
+  const userId = url.userId || null;
   res.redirect(longURL);
 });
 
@@ -348,17 +350,11 @@ app.get("/u/:id", (req, res) => {
 app.get("/urls/:id", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
-  const userId = req.cookies["user_id"];
+  const userId = req.session.user_id;
   const user = users[userId];
 
-  // let userExists = false;
-  // for (const id in users) {
-  //   const dbUser = users[id];
-  //   if (userId === dbUser.id) {
-  //     userExists = true;
-  //     user = dbUser;
-  //   }
-  // }
+
+
   if (!user) {
     res.status(403).send("Can't access page if not logged in, please log in <a href='/login'>here</a>  ");
   }
@@ -380,7 +376,8 @@ app.get("/", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   const id = req.params.id;
   const url = urlDatabase[id];
-  const userId = req.cookies["user_id"];
+ 
+  const userId = req.session.user_id;
   const user = users[userId];
 
 
@@ -416,3 +413,5 @@ app.post("/urls/:id/delete", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
+
+
