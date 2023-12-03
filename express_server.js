@@ -24,7 +24,7 @@ app.use(cookieSession({
 function generateRandomString(length) {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let results = '';
-  let counter = 0;
+
 
   for (let i = 0; i < length; i++) {
     const randomIndex = Math.floor(Math.random() * charset.length);
@@ -33,7 +33,7 @@ function generateRandomString(length) {
   return results;
 }
 
-//this is out current data base of key-value pairs stored in an object
+//this is our current data base of key-value pairs stored in an object
 const urlDatabase = {
   "b2xVn2": {
     longURL: "http://www.lighthouselabs.ca",
@@ -60,7 +60,7 @@ const users = {
 
 };
 
-// hrlperfunction that compares urls to the database
+// helperfunction that compares urls to the database
 
 const getUsersUrls = (userid) => {
   const userUrls = {};
@@ -77,9 +77,6 @@ const getUsersUrls = (userid) => {
 
 
 
-//this response to a get request from the browser when route path is /urls
-// and directs us the content on the url_index page 
-
 app.get("/urls", (req, res) => {
   const userId = req.session.user_id;
   let user = users[userId];
@@ -87,15 +84,14 @@ app.get("/urls", (req, res) => {
   // check if user is not logged in
   if (!userId || !user) {
     res.status(403).send("Please log in <a href='/login'>here</a> ");
-  }
+  };
 
   const templateVars = { urls: getUsersUrls(user.id), user };
   res.render("urls_index", templateVars);
 });
 
 
-// this directs us to the urls/new page where we can implement new urls to be logged/ 
-//its content is stored on the url new page 
+
 app.get("/urls/new", (req, res) => {
   const userId = req.session.user_id;
   let userExists = false;
@@ -162,13 +158,13 @@ app.get('/register', (req, res) => {
 
 
 
-//After registration form is submitted
+
 app.post('/register', (req, res) => {
   const body = req.body;
   const email = body.email;
   const password = body.password;
 
-  // return 404 if the e-mail or password are empty string
+
   if (email === "" || password === "") {
     res.status(404).end('<p>Please ensure both email and password are filled in!</p>');
     return;
@@ -197,13 +193,13 @@ app.post('/register', (req, res) => {
   req.session.user_id = uniqueId;
 
 
-  //redirect to sign-in page 
+
   res.redirect("urls");
 });
 
 
 
-// this post the new short url into our database and redirects it to the page we generated the short url for 
+
 app.post("/urls", (req, res) => {
   //checking is user is logged in
 
@@ -228,7 +224,7 @@ app.post("/urls", (req, res) => {
   urlDatabase[shortURL] = { longURL: longURL, userId: userId };
 
   res.redirect(`urls/${shortURL}`);
-  console.log(`The short URL: ${shortURL}`);  // Log the POST request body to the console
+
 
 });
 
@@ -236,8 +232,6 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newLongURL = req.body.longURL;
-  console.log("id:", id);
-  console.log("urlDatabase[id]:", urlDatabase[id]);
 
   urlDatabase[id].longURL = newLongURL;
   res.redirect("/urls");
@@ -246,7 +240,7 @@ app.post("/urls/:id", (req, res) => {
 
 
 
-//Added POST route for /login 
+
 app.post("/login", (req, res) => {
   const body = req.body;
   const email = body.email;
@@ -283,7 +277,7 @@ app.post("/logout", (req, res) => {
 
 
 
-//added a submit, redirects to url page.
+
 
 app.get("/u/:id", (req, res) => {
   const id = req.params.id;
