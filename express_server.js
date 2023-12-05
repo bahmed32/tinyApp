@@ -1,5 +1,5 @@
 // Required imports 
-const { getUserByEmail } = require('./helpers.js');
+const { getUserByEmail, generateRandomString, getUsersUrls, urlDatabase } = require('./helpers.js');
 const express = require("express");
 const bcrypt = require('bcryptjs');
 const cookieSession = require('cookie-session');
@@ -19,33 +19,6 @@ app.use(cookieSession({
 }));
 
 
-
-// this function generates a random sting based on a url 
-function generateRandomString(length) {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let results = '';
-
-
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length);
-    results += charset[randomIndex];
-  }
-  return results;
-}
-
-//this is our current data base of key-value pairs stored in an object
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userId: "aJ48lW"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "aJ48lW",
-  },
-
-};
-
 const users = {
   userRandomID: {
     id: "userRandomID",
@@ -59,22 +32,6 @@ const users = {
   },
 
 };
-
-// helperfunction that compares urls to the database
-
-const getUsersUrls = (userid) => {
-  const userUrls = {};
-  for (const url in urlDatabase) {
-    const urlObject = urlDatabase[url];
-    if (userid === urlObject.userId) {
-      userUrls[url] = urlObject;
-    }
-  }
-  return userUrls;
-
-};
-
-
 
 
 app.get("/urls", (req, res) => {
@@ -247,6 +204,10 @@ app.post("/login", (req, res) => {
   const password = String(body.password);
   let userId = null;
 
+  if (email === "" || password === "") {
+    res.status(404).end('<p>Please ensure both email and password are filled in!</p>');
+    return;
+  };
 
   //check if user already exsists
   const user = getUserByEmail(email, users);
@@ -306,7 +267,11 @@ app.get("/urls/:id", (req, res) => {
   const url = urlDatabase[id];
   const userId = req.session.user_id;
   const user = users[userId];
-
+  
+  if (!url) {
+    res.status(404).send("Short URL not found");
+    return;
+  }
   if (!user) {
     res.status(403).send("Can't access page if not logged in, please log in <a href='/login'>here</a>  ");
   }
@@ -314,6 +279,12 @@ app.get("/urls/:id", (req, res) => {
     res.status(403).send("Can't access page if not your account, switch accounts? <a href='/login'>here</a>  ");
   }
 
+ 
+
+
+
+  
+  res.redirect(longURL);
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: user };
   res.render("urls_show", templateVars);
 });
@@ -356,5 +327,4 @@ app.post("/urls/:id/delete", (req, res) => {
 
 //app is listening on port 8080
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
