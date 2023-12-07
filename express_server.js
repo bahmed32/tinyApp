@@ -267,27 +267,25 @@ app.get("/urls/:id", (req, res) => {
   const url = urlDatabase[id];
   const userId = req.session.user_id;
   const user = users[userId];
-  
+
   if (!url) {
     res.status(404).send("Short URL not found");
     return;
   }
   if (!user) {
     res.status(403).send("Can't access page if not logged in, please log in <a href='/login'>here</a>  ");
+    return;
   }
   if (url.userId !== user.id) {
     res.status(403).send("Can't access page if not your account, switch accounts? <a href='/login'>here</a>  ");
+    return;
   }
 
- 
-
-
-
-  
-  res.redirect(longURL);
   const templateVars = { id: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: user };
   res.render("urls_show", templateVars);
 });
+
+
 
 //if user goes to /
 app.get("/", (req, res) => {
