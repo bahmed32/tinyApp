@@ -6,7 +6,7 @@ const getUserByEmail = (email, users) => {
       return dbUser;
     }
   }
-  return; // Return null if the user is not found
+  return null; // Return null if the user is not found
 };
 
 
@@ -40,17 +40,7 @@ const getUsersUrls = (userid) => {
 };
 
 //this is our current data base of key-value pairs stored in an object
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userId: "aJ48lW"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "aJ48lW",
-  },
-
-};
+const urlDatabase = {};
 
 
 

@@ -19,19 +19,7 @@ app.use(cookieSession({
 }));
 
 
-const users = {
-  userRandomID: {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "abc",
-  },
-  user2RandomID: {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "456",
-  },
-
-};
+const users = {};
 
 
 app.get("/urls", (req, res) => {
@@ -128,7 +116,7 @@ app.post('/register', (req, res) => {
   };
 
   //check if user already exsists
-  if (getUserByEmail(email)) {
+  if (getUserByEmail(email, users)) {
     res.status(403).end('<p>Email already in use, please register another email.</p>');
     return;
   };
@@ -189,10 +177,15 @@ app.post("/urls", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const id = req.params.id;
   const newLongURL = req.body.longURL;
+  const userId = req.session.user_id;
+  const urlBelongsToUser = urlDatabase[id].userId === userId;
 
-  urlDatabase[id].longURL = newLongURL;
-  res.redirect("/urls");
-
+  if(urlBelongsToUser){
+    urlDatabase[id].longURL = newLongURL;
+    res.redirect("/urls");
+  } else {
+  res.status(403).end("<p>You are not permitted to update, if you are not the owner. Please sign in. <a href='/login'>here</a></p>");
+  }
 });
 
 
@@ -289,7 +282,12 @@ app.get("/urls/:id", (req, res) => {
 
 //if user goes to /
 app.get("/", (req, res) => {
-  res.send("Hello! and Welcome to tinyApp");
+  const userId = req.session.user_id;
+  if (userId && users[userId]) {
+    res.redirect("/urls");
+  } else {
+    res.redirect("/login");
+  }
 });
 
 // Created functional delete button  
